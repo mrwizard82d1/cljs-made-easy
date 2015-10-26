@@ -13,6 +13,8 @@ pom.xml.asc
 .lein-plugins/
 .lein-failures
 .nrepl-port
+.repl-*
+.cljs_node_repl/
 
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio
 
