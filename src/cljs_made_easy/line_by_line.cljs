@@ -18,7 +18,6 @@
                  (str chunk))
           lines (clojure.string/split data (js/RegExp. eol "g"))]
       (set! (.-lastLineData this) (last lines))
-      (doseq [line (butlast lines)
-              _ (println "line" line)]
+      (doseq [line (butlast lines)]
         (.push this line))
       (done-fn nil chunk))))
