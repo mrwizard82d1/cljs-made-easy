@@ -1,4 +1,6 @@
-(ns cljs-made-easy.line-by-line)
+(ns cljs-made-easy.line-by-line
+  (:require [cljs.nodejs :as nodejs])
+  (:use [clojure.string :only [split, split-lines]]))
 
 ;; Require the node file system and stream modules
 (def fs (js/require "fs"))
