@@ -11,6 +11,24 @@
 
 
 ;; Define functions to transform data in the pipeline and....
+;;
+;; I originally attempted to test this function "stand-alone." It failed. But I learn from this failure.
+;;
+;; Since ClojureScript functions compile to Javascript functions, they have an implicit this member. If you invoke this
+;; function and invoke `(println this)`, it will print `nil` because `this` is bound to `nil`. However, if you
+;; - Create an empty Javascript object (`#js {}`)
+;; - Set the member m to the function you previously created (`(set! o.m foo)`)
+;; - Invoke the member function `(.m o)`
+;; It will still print `nil`.
+;;
+;; However, if you change the function using the `this-as` macro and repeat the steps above, you will observe that
+;; `this` is now bound to the empty Javascript object that you created.
+;;
+;; (See the web page, http://dev.clojure.org/display/design/this, for information.)
+;;
+;; Therefore to test this function, one must create an object, bind this function to a member of the object, and then
+;; invoke the object member.
+;;
 (defn transform [chunk encoding done-fn]
   (this-as this
     ;; if we have a last line, append the chunk to this last line; otherwise, start with the chunk.
@@ -22,4 +40,5 @@
       (set! (.-lastLineData this) (last lines))
       (doseq [line (butlast lines)]
         (.push this line))
-      (done-fn nil chunk))))
+      (done-fn nil chunk)
+      )))

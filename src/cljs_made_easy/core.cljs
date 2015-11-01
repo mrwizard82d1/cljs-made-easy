@@ -5,8 +5,11 @@
 (nodejs/enable-util-print!)
 
 (defn -main [& args]
-  ; (lbl/transform (js/Buffer. "abcd\nefgh\nijkl\n") nil #(println "Done" %1 %2))
-  (println "Hello world!")
+  (let [o #js {:push #(println %)}]
+    (set! o.m lbl/transform)
+    (.m o (js/Buffer. "abcd\nefgh") nil #(println "Done" %1 %2))
+    )
+  ; (println "Hello world!")
   )
 
 (set! *main-cli-fn* -main)
