@@ -42,3 +42,10 @@
         (.push this line))
       (done-fn nil chunk)
       )))
+
+(defn flush-buffer [done-fn]
+  (this-as this
+    (if (.-lastLineData this)
+      (.push this (.-lastLineData this)))
+    (set! (.-lastLineData this) nil)
+    (done-fn)))
