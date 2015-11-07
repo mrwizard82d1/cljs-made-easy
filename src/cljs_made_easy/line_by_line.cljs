@@ -33,19 +33,38 @@
   (this-as this
     ;; if we have a last line, append the chunk to this last line; otherwise, start with the chunk.
     ;; notice also that invoking str on chunk, a data buffer, converts chunk to a string.
-    (let [data (if (.-lastLineData this)
-                 (str (.-lastLineData this) chunk)
+    (let [data (if (.-_lastLineData this)
+                 (str (.-_lastLineData this) chunk)
                  (str chunk))
           lines (clojure.string/split data (js/RegExp. eol "g"))]
-      (set! (.-lastLineData this) (last lines))
+      (set! (.-_lastLineData this) (last lines))
       (doseq [line (butlast lines)]
         (.push this line))
-      (done-fn nil chunk)
+      (done-fn)
       )))
 
 (defn flush-buffer [done-fn]
   (this-as this
-    (if (.-lastLineData this)
-      (.push this (.-lastLineData this)))
-    (set! (.-lastLineData this) nil)
+    (if (.-_lastLineData this)
+      (do
+        (.push this (.-_lastLineData this))))
+    (set! (.-_lastLineData this) nil)
     (done-fn)))
+
+(defn read-file-cb [file-name per-line-fn]
+  (let [line-reader (.Transform stream #js {:objectMode true})
+        source (.createReadStream fs file-name)]
+    ;; Set the `transform` and `flush` properties of the Transform (line-reader).
+    (set! (.-_transform line-reader) transform)
+    (set! (.-_flush line-reader) flush-buffer)
+    ;; Connect `source` to `line-reader` via a pipe
+    (.pipe source line-reader)
+    ;; When the reader is ready to be read
+    (.on line-reader "readable"
+         (fn []
+           ;; When a line is available, call `per-line-fn`
+           (when-let [line (.read line-reader)]
+             (per-line-fn (str line))
+             ;; Loop awaiting the next line
+             (recur))))
+    nil))
