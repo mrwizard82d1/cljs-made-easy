@@ -48,8 +48,7 @@
 (defn flush-buffer [done-fn]
   (this-as this
     (if (.-_lastLineData this)
-      (do
-        (.push this (.-_lastLineData this))))
+      (.push this (.-_lastLineData this)))
     (set! (.-_lastLineData this) nil)
     (done-fn)))
 
@@ -76,7 +75,7 @@
         source (.createReadStream fs file-name)]
     ;; Set the `_transform` and `_flush` properties of the Transform instance (line-reade).
     (set! (.-_transform line-reader) transform)
-    (set! (.-_transform line-reader) transform)
+    (set! (.-_flush line-reader) flush-buffer)
     ;; Connect `source` to `line-reader` via a pipe
     (.pipe source line-reader)
     ;; When the ready is ready
@@ -87,7 +86,6 @@
              (loop []
                ;; When a line is available, push it to `output-channel`
                (when-let [line (.read line-reader)]
-                 (println ">! <" (str line) "><")
                  (>! output-channel (str line))
                  (recur))))))
     nil))

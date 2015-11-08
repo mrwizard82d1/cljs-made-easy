@@ -15,15 +15,15 @@
 
 ;; I currently use this function to test library functions.
 (defn -main [& args]
-  (let [o #js {:push #(println "push" %)}]
+  (let [;;o #js {:push #(println "push" %)}
+        good (chan)]
     ;(set! o.l lbl/transform)
     ;(.l o (js/Buffer. "abcd\nefgh") nil #(println "transform done" %1 %2))
     ;(set! o.f lbl/flush-buffer)
     ;(.f o #(println "flush done"))
-    #_(lbl/read-file-cb "tests/four_score.md" get-it)
-    (let [good (chan)]
-      (got-it good)
-      (lbl/read-file-chan "tests/four_score.md" good))
+    (lbl/read-file-cb "tests/four_score.md" get-it)
+    (got-it good)
+    (lbl/read-file-chan "tests/hamlet.md" good)
     ))
 
 (set! *main-cli-fn* -main)
