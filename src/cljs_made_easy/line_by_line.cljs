@@ -1,6 +1,7 @@
 (ns cljs-made-easy.line-by-line
-  (:require [cljs.nodejs :as nodejs])
-  (:use [clojure.string :only [split, split-lines]]))
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:use [clojure.string :only [split, split-lines]
+        [cljs.core.async :only [>!]]]))
 
 ;; Require the node file system and stream modules
 (def fs (js/require "fs"))
@@ -15,7 +16,7 @@
 ;; I originally attempted to test this function "stand-alone." It failed. But I learn from this failure.
 ;;
 ;; Since ClojureScript functions compile to Javascript functions, they have an implicit this member. If you invoke this
-;; function and invoke `(println this)`, it will print `nil` because `this` is bound to `nil`. However, if you
+;; function and invoke `(println this)`, it will print `nil` because `this` is bound to `nil`. However, if you  
 ;; - Create an empty Javascript object (`#js {}`)
 ;; - Set the member m to the function you previously created (`(set! o.m foo)`)
 ;; - Invoke the member function `(.m o)`
@@ -29,6 +30,7 @@
 ;; Therefore to test this function, one must create an object, bind this function to a member of the object, and then
 ;; invoke the object member.
 ;;
+
 (defn transform [chunk encoding done-fn]
   (this-as this
     ;; if we have a last line, append the chunk to this last line; otherwise, start with the chunk.
@@ -54,7 +56,7 @@
 (defn read-file-cb [file-name per-line-fn]
   (let [line-reader (.Transform stream #js {:objectMode true})
         source (.createReadStream fs file-name)]
-    ;; Set the `transform` and `flush` properties of the Transform (line-reader).
+    ;; Set the `_transform` and `_flush` properties of the Transform instance (line-reader).
     (set! (.-_transform line-reader) transform)
     (set! (.-_flush line-reader) flush-buffer)
     ;; Connect `source` to `line-reader` via a pipe
@@ -68,3 +70,26 @@
              ;; Loop awaiting the next line
              (recur))))
     nil))
+
+(defn read-file-chan [file-name output-channel]
+  (let [line-reader (.Transform stream #js {:objectMode true})
+        source (.createReadStream fs file-name)]
+    ;; Set the `_transform` and `_flush` properties of the Transform instance (line-reade).
+    (set! (.-_transform line-reader) transform)
+    (set! (.-_transform line-reader) transform)
+    ;; Connect `source` to `line-reader` via a pipe
+    (.pipe source line-reader)
+    ;; When the ready is ready
+    (.on line-reader "readable"
+         (fn []
+           ;; Start a "go block" to write to `output-channel`
+           (go
+             (loop []
+               ;; When a line is available, push it to `output-channel`
+               (when-let [line (.read line-reader)]
+                 (println ">! <" (str line) "><")
+                 (>! output-channel (str line))
+                 (recur))))))
+    nil))
+
+
